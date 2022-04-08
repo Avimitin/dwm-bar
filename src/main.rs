@@ -296,6 +296,21 @@ mod component {
             ))
         }
     }
+
+    pub fn avg_load() -> Option<Component> {
+        use std::fs;
+
+        // basically error should not happen
+        let loadavg = fs::read_to_string("/proc/loadavg").ok()?; // convert error to None
+        let loadavg: Vec<&str> = loadavg.split(' ').collect();
+
+        Some(Component::new(
+            "﬙",
+            ("", ""),
+            loadavg[0], // use the load from last minutes
+            ("#EAEAEA", ""),
+        ))
+    }
 }
 
 /// Reset the color the SchemeNorm
@@ -313,6 +328,7 @@ fn run() {
             component::sound_volume(),
             component::headset_battery(),
             component::battery(),
+            component::avg_load(),
             component::date_and_time(),
         ];
 
