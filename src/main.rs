@@ -180,7 +180,11 @@ mod component {
                 icon_bg = s.clone();
             }
             // [icon] [text]
-            write!(f, "{}{}{} {}{}{}", icon_fg, icon_bg, self.icon, fg, bg, self.text)
+            write!(
+                f,
+                "{}{}{} {}{}{}",
+                icon_fg, icon_bg, self.icon, fg, bg, self.text
+            )
         }
     }
 
@@ -300,14 +304,32 @@ mod component {
     pub fn avg_load() -> Option<Component> {
         use std::fs;
 
-        // basically error should not happen
-        let loadavg = fs::read_to_string("/proc/loadavg").ok()?; // convert error to None
-        let loadavg: Vec<&str> = loadavg.split(' ').collect();
+        let status = fs::read_to_string("/proc/stat").ok()?;
+        let mut cpustat = Vec::new();
+        for line in status.lines() {
+            if line.starts_with("cpu") {
+                cpustat = line.split(' ').skip(2).collect::<Vec<&str>>();
+                break;
+            }
+        }
+
+        if cpustat.len() < 8 {
+            return None;
+        }
+
+        // get the cpu idle time
+        let idle = cpustat.remove(3).parse::<i32>().ok()?;
+        let mut other = 0;
+        for time in cpustat {
+            other += time.parse::<i32>().ok()?;
+        }
+
+        let avg = (idle * 100) / other;
 
         Some(Component::new(
             "﬙",
             ("", ""),
-            loadavg[0], // use the load from last minutes
+            &format!("{} %", avg / 100), // use the load from last minutes
             ("#EAEAEA", ""),
         ))
     }
