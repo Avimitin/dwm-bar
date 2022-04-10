@@ -34,7 +34,7 @@ macro_rules! cmd {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 struct Color {
     fg: Option<String>,
     bg: Option<String>,
@@ -47,49 +47,50 @@ impl Color {
     /// parameter `bg` means background. You should give a valid hex color code in format
     /// like `#FFFFFF`. If you pass empty string, this means you are going to use the
     /// default colors.
-    fn new<T: Into<String>>(fg: T, bg: T, icon: (T, T)) -> Self {
-        let fg = fg.into();
-        let bg = bg.into();
-        let icon_fg = icon.0.into();
-        let icon_bg = icon.1.into();
+    fn new() -> Self {
+        Self::default()
+    }
 
-        let fg = if fg.is_empty() {
-            None
-        } else {
-            Some(format!("^c{}^", fg))
-        };
+    fn text<T: Into<String>, E: Into<String>>(mut self, fg: T, bg: E) -> Self {
+        self.fg = Some(format!("^c{}^", fg.into()));
+        self.bg = Some(format!("^b{}^", bg.into()));
+        self
+    }
 
-        let bg = if bg.is_empty() {
-            None
-        } else {
-            Some(format!("^b{}^", bg))
-        };
+    fn icon<T: Into<String>, E: Into<String>>(mut self, fg: T, bg: E) -> Self {
+        self.icon_fg = Some(format!("^c{}^", fg.into()));
+        self.icon_bg = Some(format!("^b{}^", bg.into()));
+        self
+    }
 
-        let icon_fg = if icon_fg.is_empty() {
-            fg.clone()
-        } else {
-            Some(format!("^c{}^", icon_fg))
-        };
+    fn text_fg<T: Into<String>>(mut self, fg: T) -> Self {
+        self.fg = Some(format!("^c{}^", fg.into()));
+        self
+    }
 
-        let icon_bg = if icon_bg.is_empty() {
-            bg.clone()
-        } else {
-            Some(format!("^b{}^", icon_bg))
-        };
+    #[allow(dead_code)]
+    fn text_bg<T: Into<String>>(mut self, bg: T) -> Self {
+        self.bg = Some(format!("^b{}^", bg.into()));
+        self
+    }
 
-        Self {
-            fg,
-            bg,
-            icon_fg,
-            icon_bg,
-        }
+    #[allow(dead_code)]
+    fn icon_fg<T: Into<String>>(mut self, fg: T) -> Self {
+        self.icon_fg = Some(format!("^c{}^", fg.into()));
+        self
+    }
+
+    #[allow(dead_code)]
+    fn icon_bg<T: Into<String>>(mut self, bg: T) -> Self {
+        self.icon_bg = Some(format!("^b{}^", bg.into()));
+        self
     }
 }
 
 #[test]
 fn test_color_new() {
     assert_eq!(
-        Color::new("", "", ("", "")),
+        Color::new(),
         Color {
             fg: None,
             bg: None,
@@ -98,7 +99,7 @@ fn test_color_new() {
         }
     );
     assert_eq!(
-        Color::new("#000000", "", ("", "")),
+        Color::new().text_fg("#000000").icon_fg("#000000"),
         Color {
             fg: Some("^c#000000^".to_string()),
             bg: None,
@@ -107,7 +108,7 @@ fn test_color_new() {
         }
     );
     assert_eq!(
-        Color::new("", "#FFFFFF", ("", "")),
+        Color::new().text_bg("#FFFFFF").icon_bg("#FFFFFF"),
         Color {
             fg: None,
             bg: Some("^b#FFFFFF^".to_string()),
@@ -116,16 +117,16 @@ fn test_color_new() {
         }
     );
     assert_eq!(
-        Color::new("#000000", "#FFFFFF", ("", "")),
+        Color::new().text("#000000", "#FFFFFF"),
         Color {
             fg: Some("^c#000000^".to_string()),
             bg: Some("^b#FFFFFF^".to_string()),
-            icon_fg: Some("^c#000000^".to_string()),
-            icon_bg: Some("^b#FFFFFF^".to_string()),
+            icon_fg: None,
+            icon_bg: None,
         }
     );
     assert_eq!(
-        Color::new("#000000", "#FFFFFF", ("#EAEAEA", "#FF00FF")),
+        Color::new().icon("#EAEAEA", "#FF00FF"),
         Color {
             fg: Some("^c#000000^".to_string()),
             bg: Some("^b#FFFFFF^".to_string()),
@@ -143,15 +144,33 @@ pub struct Component {
 }
 
 impl Component {
-    /// Create a new component with icon, text, and foreground, backgroun colors.
-    ///
-    /// T: Into<String>
-    pub fn new<T: Into<String>>(icon: T, icon_color: (T, T), text: T, text_color: (T, T)) -> Self {
+    /// Builder chain for component.
+    pub fn new<T: Into<String>, E: Into<String>>(icon: T, text: E) -> Self {
         Self {
             icon: icon.into(),
             text: text.into(),
-            color: Color::new(text_color.0, text_color.1, icon_color),
+            color: Color::new(),
         }
+    }
+
+    pub fn text_fg<T: Into<String>>(mut self, fg: T) -> Self {
+        self.color = self.color.text_fg(fg);
+        self
+    }
+
+    pub fn text_color<T: Into<String>>(mut self, fg: T, bg: T) -> Self {
+        self.color = self.color.text(fg, bg);
+        self
+    }
+
+    pub fn icon_color<T: Into<String>>(mut self, fg: T, bg: T) -> Self {
+        self.color = self.color.icon(fg, bg);
+        self
+    }
+
+    pub fn icon_fg<T: Into<String>>(mut self, fg: T) -> Self {
+        self.color = self.color.icon_fg(fg);
+        self
     }
 }
 
@@ -186,24 +205,22 @@ impl std::fmt::Display for Component {
 pub fn date_and_time() -> Option<Component> {
     use chrono::prelude::Local;
     let now = Local::now();
-    Some(Component::new(
-        "",
-        ("", ""),
-        &now.format("%B/%d %I:%M %p").to_string(),
-        ("#EAEAEA", ""),
-    ))
+    Some(
+        Component::new("", now.format("%B/%d %I:%M %p").to_string())
+            .text_fg("#EAEAEA")
+            .icon_fg("#EAEAEA"),
+    )
 }
 
 /// Create a sound volume component for bar
 pub fn sound_volume() -> Option<Component> {
     // TODO: use the libpulse crates to do this shit
     let output = cmd!("pamixer", "--get-volume");
-    Some(Component::new(
-        "",
-        ("", ""),
-        format!("{}%", output).as_str(),
-        ("#EAEAEA", ""),
-    ))
+    Some(
+        Component::new("", format!("{}%", output))
+            .text_fg("#EAEAEA")
+            .icon_fg("#EAEAEA"),
+    )
 }
 
 pub fn song_info() -> Option<Component> {
@@ -234,12 +251,11 @@ pub fn song_info() -> Option<Component> {
         output
     };
 
-    Some(Component::new(
-        " ",
-        ("#EAEAEA", "#0C0C0C"),
-        &output,
-        ("#EAEAEA", "#171617"),
-    ))
+    Some(
+        Component::new(" ", output)
+            .icon_color("#EAEAEA", "#0C0C0C")
+            .text_color("#EAEAEA", "#171617"),
+    )
 }
 
 pub fn battery() -> Option<Component> {
@@ -248,11 +264,18 @@ pub fn battery() -> Option<Component> {
     if output.is_empty() {
         return None;
     }
-    if output[2] == "Discharging," {
-        Some(Component::new("", ("", ""), output[3], ("#EAEAEA", "")))
+
+    let icon = if output[2] == "Discharging," {
+        ""
     } else {
-        Some(Component::new("", ("", ""), output[3], ("#EAEAEA", "")))
-    }
+        ""
+    };
+
+    Some(
+        Component::new(icon, output[3])
+            .text_fg("#EAEAEA")
+            .icon_fg("#EAEAEA"),
+    )
 }
 
 pub fn headset_battery() -> Option<Component> {
@@ -291,12 +314,11 @@ pub fn headset_battery() -> Option<Component> {
     if percentage.is_empty() {
         None
     } else {
-        Some(Component::new(
-            "",
-            ("", ""),
-            &format!("{}%", percentage.join("")),
-            ("#EAEAEA", ""),
-        ))
+        Some(
+            Component::new("", format!("{}%", percentage.join("")))
+                .text_fg("#EAEAEA")
+                .icon_fg("#EAEAEA"),
+        )
     }
 }
 
@@ -317,18 +339,18 @@ pub fn avg_load() -> Option<Component> {
     }
 
     // get the cpu idle time
-    let idle = cpustat.remove(3).parse::<i32>().ok()?;
-    let mut other = 0;
+    let idle = cpustat.remove(3).parse::<f32>().ok()?;
+    let mut other = 0.0;
     for time in cpustat {
-        other += time.parse::<i32>().ok()?;
+        other += time.parse::<f32>().ok()?;
     }
 
     let avg = other / idle;
+    dbg!(avg, other, idle);
 
-    Some(Component::new(
-        "﬙",
-        ("", ""),
-        &format!("{} %", avg / 100), // use the load from last minutes
-        ("#EAEAEA", ""),
-    ))
+    Some(
+        Component::new("﬙", format!("{:.2} %", avg))
+            .text_fg("#EAEAEA")
+            .icon_fg("#EAEAEA"),
+    )
 }
