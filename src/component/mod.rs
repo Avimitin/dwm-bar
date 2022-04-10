@@ -184,9 +184,14 @@ impl std::fmt::Display for Component {
 
 /// Create a date component for bar
 pub fn date_and_time() -> Option<Component> {
-    // TODO: use rust native date time
-    let date_output = cmd!("date", "'+%B/%d %I:%M %p'");
-    Some(Component::new("", ("", ""), &date_output, ("#EAEAEA", "")))
+    use chrono::prelude::Local;
+    let now = Local::now();
+    Some(Component::new(
+        "",
+        ("", ""),
+        &now.format("%B/%d %I:%M %p").to_string(),
+        ("#EAEAEA", ""),
+    ))
 }
 
 /// Create a sound volume component for bar
