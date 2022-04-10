@@ -196,7 +196,7 @@ pub fn date_and_time() -> Option<Component> {
 
 /// Create a sound volume component for bar
 pub fn sound_volume() -> Option<Component> {
-    // TODO: Can we RIIR this? Or do Rust have PulseAudio library? Figure it out!
+    // TODO: use the libpulse crates to do this shit
     let output = cmd!("pamixer", "--get-volume");
     Some(Component::new(
         "",
@@ -207,15 +207,15 @@ pub fn sound_volume() -> Option<Component> {
 }
 
 pub fn song_info() -> Option<Component> {
+    use mpris::PlayerFinder;
+    // TODO: We need to use logging to report error here.
+    let player = PlayerFinder::new().ok()?.find_active().ok()?;
+
     let text_limit = 40;
+    let metadata = player.get_metadata().ok()?;
 
-    let artist = cmd!("playerctl", "metadata", "artist");
-    let song = cmd!("playerctl", "metadata", "title");
-
-    // No music player can be open, playerctl will return no stdout but only stderr
-    if artist.is_empty() {
-        return None;
-    }
+    let artist = metadata.artists()?.join(" ");
+    let song = metadata.title()?;
 
     let output = format!(
         " {} - {} ",
@@ -323,7 +323,7 @@ pub fn avg_load() -> Option<Component> {
         other += time.parse::<i32>().ok()?;
     }
 
-    let avg = (idle * 100) / other;
+    let avg = other / idle;
 
     Some(Component::new(
         "﬙",
