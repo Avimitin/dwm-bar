@@ -346,10 +346,9 @@ pub fn avg_load() -> Option<Component> {
     }
 
     let avg = other / idle;
-    dbg!(avg, other, idle);
 
     Some(
-        Component::new("﬙", format!("{:.2} %", avg))
+        Component::new("﬙", format!("{:.2} %", avg * 100.0))
             .text_fg("#EAEAEA")
             .icon_fg("#EAEAEA"),
     )
