@@ -34,107 +34,9 @@ macro_rules! cmd {
     }
 }
 
-#[derive(Debug, PartialEq, Default)]
-struct Color {
-    fg: Option<String>,
-    bg: Option<String>,
-    icon_fg: Option<String>,
-    icon_bg: Option<String>,
-}
+mod color;
 
-impl Color {
-    /// Create a new color set. The first parameter `fg` means foreground, and the second
-    /// parameter `bg` means background. You should give a valid hex color code in format
-    /// like `#FFFFFF`. If you pass empty string, this means you are going to use the
-    /// default colors.
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn text<T: Into<String>, E: Into<String>>(mut self, fg: T, bg: E) -> Self {
-        self.fg = Some(format!("^c{}^", fg.into()));
-        self.bg = Some(format!("^b{}^", bg.into()));
-        self
-    }
-
-    fn icon<T: Into<String>, E: Into<String>>(mut self, fg: T, bg: E) -> Self {
-        self.icon_fg = Some(format!("^c{}^", fg.into()));
-        self.icon_bg = Some(format!("^b{}^", bg.into()));
-        self
-    }
-
-    fn text_fg<T: Into<String>>(mut self, fg: T) -> Self {
-        self.fg = Some(format!("^c{}^", fg.into()));
-        self
-    }
-
-    #[allow(dead_code)]
-    fn text_bg<T: Into<String>>(mut self, bg: T) -> Self {
-        self.bg = Some(format!("^b{}^", bg.into()));
-        self
-    }
-
-    #[allow(dead_code)]
-    fn icon_fg<T: Into<String>>(mut self, fg: T) -> Self {
-        self.icon_fg = Some(format!("^c{}^", fg.into()));
-        self
-    }
-
-    #[allow(dead_code)]
-    fn icon_bg<T: Into<String>>(mut self, bg: T) -> Self {
-        self.icon_bg = Some(format!("^b{}^", bg.into()));
-        self
-    }
-}
-
-#[test]
-fn test_color_new() {
-    assert_eq!(
-        Color::new(),
-        Color {
-            fg: None,
-            bg: None,
-            icon_fg: None,
-            icon_bg: None
-        }
-    );
-    assert_eq!(
-        Color::new().text_fg("#000000").icon_fg("#000000"),
-        Color {
-            fg: Some("^c#000000^".to_string()),
-            bg: None,
-            icon_fg: Some("^c#000000^".to_string()),
-            icon_bg: None,
-        }
-    );
-    assert_eq!(
-        Color::new().text_bg("#FFFFFF").icon_bg("#FFFFFF"),
-        Color {
-            fg: None,
-            bg: Some("^b#FFFFFF^".to_string()),
-            icon_fg: None,
-            icon_bg: Some("^b#FFFFFF^".to_string())
-        }
-    );
-    assert_eq!(
-        Color::new().text("#000000", "#FFFFFF"),
-        Color {
-            fg: Some("^c#000000^".to_string()),
-            bg: Some("^b#FFFFFF^".to_string()),
-            icon_fg: None,
-            icon_bg: None,
-        }
-    );
-    assert_eq!(
-        Color::new().icon("#EAEAEA", "#FF00FF"),
-        Color {
-            fg: Some("^c#000000^".to_string()),
-            bg: Some("^b#FFFFFF^".to_string()),
-            icon_fg: Some("^c#EAEAEA^".to_string()),
-            icon_bg: Some("^b#FF00FF^".to_string()),
-        }
-    );
-}
+use color::Color;
 
 #[derive(Debug)]
 pub struct Component {
@@ -176,22 +78,12 @@ impl Component {
 
 impl std::fmt::Display for Component {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut fg = String::new();
-        let mut bg = String::new();
-        let mut icon_fg = String::new();
-        let mut icon_bg = String::new();
-        if let Some(s) = &self.color.fg {
-            fg = s.clone();
-        }
-        if let Some(s) = &self.color.bg {
-            bg = s.clone();
-        }
-        if let Some(s) = &self.color.icon_fg {
-            icon_fg = s.clone();
-        }
-        if let Some(s) = &self.color.icon_bg {
-            icon_bg = s.clone();
-        }
+        let s = String::new();
+
+        let fg = self.color.fg.as_ref().unwrap_or(&s);
+        let bg = self.color.bg.as_ref().unwrap_or(&s);
+        let icon_fg = self.color.icon_fg.as_ref().unwrap_or(&s);
+        let icon_bg = self.color.icon_bg.as_ref().unwrap_or(&s);
         // [icon] [text]
         write!(
             f,
