@@ -17,12 +17,12 @@ pub fn avg_load() -> Option<Component> {
 
     // get the cpu idle time
     let idle = cpustat.remove(3).parse::<f32>().ok()?;
-    let mut other = 0.0;
+    let mut active = 0.0;
     for time in cpustat {
-        other += time.parse::<f32>().ok()?;
+        active += time.parse::<f32>().ok()?;
     }
 
-    let avg = other / idle;
+    let avg = active / (active + idle);
 
     Some(
         Component::new("﬙", format!("{:.2} %", avg * 100.0))
