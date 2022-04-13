@@ -1,5 +1,5 @@
 /// Create a date component for bar
-use super::component::Component;
+use super::widget::Component;
 use chrono::prelude::Local;
 
 pub fn date_and_time() -> Option<Component> {

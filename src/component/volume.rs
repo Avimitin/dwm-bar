@@ -1,4 +1,4 @@
-use super::component::Component;
+use super::widget::Component;
 use std::process::Command;
 
 /// Create a sound volume component for bar

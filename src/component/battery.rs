@@ -1,4 +1,4 @@
-use super::component::Component;
+use super::widget::Component;
 use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
 use dbus::blocking::Connection;
 use dbus::Path;

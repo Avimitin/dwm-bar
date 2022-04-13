@@ -1,5 +1,5 @@
 use mpris::PlayerFinder;
-use super::component::Component;
+use super::widget::Component;
 
 pub fn song_info() -> Option<Component> {
     // TODO: We need to use logging to report error here.

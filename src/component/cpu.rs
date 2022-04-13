@@ -1,5 +1,5 @@
 use std::fs;
-use super::component::Component;
+use super::widget::Component;
 
 pub fn avg_load() -> Option<Component> {
     let status = fs::read_to_string("/proc/stat").ok()?;
