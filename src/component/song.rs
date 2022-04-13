@@ -23,7 +23,8 @@ pub fn song_info() -> Option<Component> {
 
     // trim the text
     let output = if output.len() > text_limit {
-        format!("{}...", &output[0..text_limit])
+        let split = output.chars().take(text_limit).collect::<String>();
+        format!("{}...", split)
     } else {
         output
     };
