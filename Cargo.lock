@@ -108,6 +108,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de0a745c25b32caa56b82a3950f5fec7893a960f4c10ca3b02060b0c38d8c2ce"
+dependencies = [
+ "libc",
+ "libdbus-sys",
+ "winapi",
+]
+
+[[package]]
 name = "derive_is_enum_variant"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -123,6 +134,8 @@ name = "dwm-bar"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dbus 0.9.5",
+ "lazy_static",
  "mpris",
 ]
 
@@ -207,6 +220,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
 name = "libc"
 version = "0.2.122"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,7 +262,7 @@ version = "2.0.0-rc2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "195e67e2b467af5146f517b0d988b5894e425a77c52a9bb5a065513ef3c2e711"
 dependencies = [
- "dbus",
+ "dbus 0.8.4",
  "derive_is_enum_variant",
  "enum-kinds",
  "failure",
