@@ -13,6 +13,7 @@ fn run() {
         let bar = vec![
             component::song_info(),
             component::sound_volume(),
+            #[cfg(feature = "bluetooth-battery")]
             component::headset_battery(),
             component::battery(),
             component::avg_load(),

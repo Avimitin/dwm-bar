@@ -1,9 +1,5 @@
 use super::widget::Block;
-use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
-use dbus::blocking::Connection;
-use dbus::Path;
 use std::fs;
-use std::time::Duration;
 
 /// Build a component to show laptop battery percentage and power-supply status.
 /// Statistic come from /sys/class/power_supply/<bat_name>/{capacity,status}.
@@ -26,11 +22,21 @@ pub fn battery() -> Option<Block> {
     )
 }
 
+#[cfg(feature = "bluetooth-battery")]
+use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
+#[cfg(feature = "bluetooth-battery")]
+use dbus::blocking::Connection;
+#[cfg(feature = "bluetooth-battery")]
+use dbus::Path;
+#[cfg(feature = "bluetooth-battery")]
+use std::time::Duration;
+
 /// Build a headset battery component.
 /// This functionality depends on UPower DBus daemon
 ///
 /// Return None if no battery device name contains "headset" keyword,
 /// or no percentage property is found.
+#[cfg(feature = "bluetooth-battery")]
 pub fn headset_battery() -> Option<Block> {
     let dbus_sys_connection = Connection::new_system()
         .expect(

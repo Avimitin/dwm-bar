@@ -46,5 +46,7 @@ mod cpu;
 pub use song::song_info;
 pub use datetime::date_and_time;
 pub use volume::sound_volume;
-pub use battery::{battery, headset_battery};
+#[cfg(feature = "bluetooth-battery")]
+pub use battery::headset_battery;
+pub use battery::battery;
 pub use cpu::avg_load;
