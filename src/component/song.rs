@@ -4,7 +4,7 @@ use dbus::arg;
 use dbus::blocking::{Connection, stdintf::org_freedesktop_dbus::Properties};
 use std::time::Duration;
 
-pub fn song_info() -> Option<Block> {
+pub async fn song_info() -> Option<Block> {
     let conn = Connection::new_session().ok()?;
     let player_addr = find_active_player_address(&conn).ok()?;
     let metadata = get_metadata(&conn, &player_addr).ok()?;

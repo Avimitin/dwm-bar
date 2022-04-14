@@ -5,19 +5,20 @@ static NORMAL_COLOR: &str = "^d^";
 static DIVIDER: &str = "     |     ";
 
 use std::process::{exit, Command};
-use std::thread::sleep;
+use tokio::time::sleep;
 use std::time::Duration;
 
-fn run() {
+async fn run() {
     let bar = vec![
-        component::song_info(),
-        component::sound_volume(),
+        component::song_info().await,
+        component::sound_volume().await,
         #[cfg(feature = "bluetooth-battery")]
         component::headset_battery(),
-        component::battery(),
-        component::avg_load(),
+        component::battery().await,
+        component::avg_load().await,
         component::date_and_time(),
     ];
+
 
     let mut begining = true;
     let mut barline = String::new();
@@ -48,16 +49,17 @@ struct App {
     dry: bool,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let app: App = argh::from_env();
     // run once
     if app.dry {
-        run();
+        run().await;
         exit(0);
     }
 
     loop {
-        run();
-        sleep(Duration::from_secs(10));
+        run().await;
+        sleep(Duration::from_secs(10)).await;
     }
 }
