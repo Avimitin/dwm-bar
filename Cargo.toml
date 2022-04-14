@@ -12,3 +12,4 @@ bluetooth-battery = []
 chrono = { version = "0.4", features = ["unstable-locales"] }
 mpris = "2.0.0-rc2"
 dbus = "0.9.5"
+argh = "0.1.7"
