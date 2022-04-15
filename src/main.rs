@@ -5,8 +5,8 @@ static NORMAL_COLOR: &str = "^d^";
 static DIVIDER: &str = "     |     ";
 
 use std::process::{exit, Command};
-use tokio::time::sleep;
 use std::time::Duration;
+use tokio::time::sleep;
 
 async fn run() {
     let bar = vec![
@@ -19,7 +19,6 @@ async fn run() {
         component::date_and_time(),
     ];
 
-
     let mut begining = true;
     let mut barline = String::new();
     for component in bar.iter().flatten() {
@@ -31,6 +30,13 @@ async fn run() {
         barline.push_str(&format!("{}", component));
         barline.push_str(NORMAL_COLOR);
     }
+
+    // Clean the bar
+    Command::new("xsetroot")
+        .arg("-name")
+        .arg("''")
+        .output()
+        .expect("Fail to execute xsetroot command");
 
     if let Ok(mut child) = Command::new("xsetroot").arg("-name").arg(barline).spawn() {
         child.wait().expect("fail to end the xsetroot command");
