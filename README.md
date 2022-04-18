@@ -21,7 +21,7 @@ cargo install --path .
 
 ## Todo
 
-- [ ] tokio async io
+- [x] tokio async io
 - [ ] native PulseAudio control
 - [x] native battery information
 - [ ] easy configuration
