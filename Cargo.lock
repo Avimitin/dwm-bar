@@ -89,6 +89,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus-tokio"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12a1a74a0c53b22d7d994256cf3ecbeefa5eedce3cf9d362945ac523c4132180"
+dependencies = [
+ "dbus",
+ "libc",
+ "tokio",
+]
+
+[[package]]
 name = "dwm-bar"
 version = "0.1.0"
 dependencies = [
@@ -96,6 +107,7 @@ dependencies = [
  "argh",
  "chrono",
  "dbus",
+ "dbus-tokio",
  "tokio",
 ]
 

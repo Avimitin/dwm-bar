@@ -1,13 +1,23 @@
+// FIXME: We should keep the connection
+
 use super::widget::Block;
 use anyhow::Result;
 use dbus::arg;
-use dbus::blocking::{Connection, stdintf::org_freedesktop_dbus::Properties};
+use dbus::nonblock::{stdintf::org_freedesktop_dbus::Properties, Proxy, SyncConnection};
+use dbus_tokio::connection;
+use std::sync::Arc;
 use std::time::Duration;
 
 pub async fn song_info() -> Option<Block> {
-    let conn = Connection::new_session().ok()?;
-    let player_addr = find_active_player_address(&conn).ok()?;
-    let metadata = get_metadata(&conn, &player_addr).ok()?;
+    let (resource, conn) = connection::new_session_sync().ok()?;
+
+    // keep the connection
+    let _conn_handle = tokio::spawn(async {
+        resource.await;
+    });
+
+    let player_addr = find_active_player_address(conn.clone()).await.ok()?;
+    let metadata = get_metadata(conn.clone(), &player_addr).await.ok()?;
 
     let artist: Option<&Vec<String>> = arg::prop_cast(&metadata, "xesam:artist");
     let artist = artist?.join(" ");
@@ -40,9 +50,16 @@ pub async fn song_info() -> Option<Block> {
     )
 }
 
-fn find_active_player_address(conn: &Connection) -> Result<String> {
-    let proxy = conn.with_proxy("org.freedesktop.DBus", "/", Duration::from_millis(2000));
-    let (services,): (Vec<String>,) = proxy.method_call("org.freedesktop.DBus", "ListNames", ())?;
+async fn find_active_player_address(conn: Arc<SyncConnection>) -> Result<String> {
+    let proxy = Proxy::new(
+        "org.freedesktop.DBus",
+        "/",
+        Duration::from_millis(2000),
+        conn,
+    );
+    let (services,): (Vec<String>,) = proxy
+        .method_call("org.freedesktop.DBus", "ListNames", ())
+        .await?;
 
     for service in services {
         if service.contains("mpris") {
@@ -53,7 +70,14 @@ fn find_active_player_address(conn: &Connection) -> Result<String> {
     anyhow::bail!("No active mpris player was found")
 }
 
-fn get_metadata(conn: &Connection, addr: &str) -> Result<arg::PropMap> {
-    let proxy = conn.with_proxy(addr, "/org/mpris/MediaPlayer2", Duration::from_millis(2000));
-    Ok(proxy.get("org.mpris.MediaPlayer2.Player", "Metadata")?)
+async fn get_metadata(conn: Arc<SyncConnection>, addr: &str) -> Result<arg::PropMap> {
+    let proxy = Proxy::new(
+        addr,
+        "/org/mpris/MediaPlayer2",
+        Duration::from_millis(2000),
+        conn,
+    );
+    Ok(proxy
+        .get("org.mpris.MediaPlayer2.Player", "Metadata")
+        .await?)
 }
