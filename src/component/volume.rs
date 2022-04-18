@@ -1,3 +1,5 @@
+// This implementation is copy from https://github.com/krruzic/pulsectl
+
 extern crate libpulse_binding as pulse;
 
 use std::{cell::RefCell, ops::Deref, rc::Rc};
