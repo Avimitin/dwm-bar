@@ -15,3 +15,5 @@ argh = "0.1.7"
 tokio = { version = "1.17.0", features = ["full"] }
 anyhow = "1.0.56"
 dbus-tokio = { version = "0.7.5" }
+libpulse-binding = { version = "2.26.0" }
+
