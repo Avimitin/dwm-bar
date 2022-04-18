@@ -14,7 +14,7 @@ async fn run() {
         t_spawn(async { component::song_info().await }),
         t_spawn(async { component::sound_volume().await }),
         #[cfg(feature = "bluetooth-battery")]
-        t_spawn(async { component::headset_battery() }),
+        t_spawn(async { component::headset_battery().await }),
         t_spawn(async { component::battery().await }),
         t_spawn(async { component::avg_load().await }),
         t_spawn(async { component::date_and_time() }),
