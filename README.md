@@ -36,7 +36,7 @@ cargo install --path . --features headset-battery
 ## Todo
 
 - [x] tokio async io
-- [ ] native PulseAudio control
+- [x] native PulseAudio control
 - [x] native battery information
 - [ ] easy configuration
 - [ ] API port for new module
