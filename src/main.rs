@@ -6,22 +6,29 @@ static DIVIDER: &str = "     |     ";
 
 use std::process::{exit, Command};
 use std::time::Duration;
+use tokio::spawn as t_spawn;
 use tokio::time::sleep;
 
 async fn run() {
     let bar = vec![
-        component::song_info().await,
-        component::sound_volume().await,
+        t_spawn(async { component::song_info().await }),
+        t_spawn(async { component::sound_volume().await }),
         #[cfg(feature = "bluetooth-battery")]
-        component::headset_battery(),
-        component::battery().await,
-        component::avg_load().await,
-        component::date_and_time(),
+        t_spawn(async { component::headset_battery() }),
+        t_spawn(async { component::battery().await }),
+        t_spawn(async { component::avg_load().await }),
+        t_spawn(async { component::date_and_time() }),
     ];
+
+    let mut info = Vec::new();
+    for task in bar {
+        let i = task.await.unwrap();
+        info.push(i);
+    }
 
     let mut begining = true;
     let mut barline = String::new();
-    for component in bar.iter().flatten() {
+    for component in info.iter().flatten() {
         if begining {
             begining = false;
         } else {
