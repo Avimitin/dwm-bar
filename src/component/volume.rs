@@ -194,7 +194,7 @@ pub async fn sound_volume() -> Option<Block> {
     let dev = devices[0];
     let icon = if dev.is_muted() { "" } else { "" };
     Some(
-        Block::new(icon, format!("{}%", dev.print().trim()))
+        Block::new(icon, dev.print().trim())
             .text_fg("#EAEAEA")
             .icon_fg("#EAEAEA"),
     )
