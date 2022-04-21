@@ -7,13 +7,16 @@ use dbus::nonblock::{stdintf::org_freedesktop_dbus::Properties, Proxy, SyncConne
 use dbus_tokio::connection;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::{info, error};
 
 pub async fn song_info() -> Option<Block> {
     let (resource, conn) = connection::new_session_sync().ok()?;
 
-    // keep the connection
+    // FIXME: Keep connection once is enough
     let _conn_handle = tokio::spawn(async {
-        resource.await;
+        info!("Holding connection to D-Bus");
+        let err = resource.await;
+        error!("Lost connection to D-Bus: {}", err);
     });
 
     let player_addr = find_active_player_address(conn.clone()).await.ok()?;

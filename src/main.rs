@@ -40,11 +40,21 @@ async fn run() {
 
     // Clean the bar
     let mut cmd = Command::new("xsetroot");
-    let _hold = cmd.arg("-name").arg("''").output().expect("Fail to execute xsetroot");
-    let _hold = cmd.arg("-name").arg(barline).output().expect("Fail to execute xsetroot");
+    let _hold = cmd
+        .arg("-name")
+        .arg("''")
+        .output()
+        .expect("Fail to execute xsetroot");
+    let _hold = cmd
+        .arg("-name")
+        .arg(barline)
+        .output()
+        .expect("Fail to execute xsetroot");
 }
 
 use argh::FromArgs;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[derive(FromArgs)]
 /// Print computer status to dwm bar
@@ -56,6 +66,12 @@ struct App {
 
 #[tokio::main]
 async fn main() {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("Fail to set default logger");
+
     let app: App = argh::from_env();
     // run once
     if app.dry {
@@ -63,6 +79,7 @@ async fn main() {
         exit(0);
     }
 
+    info!("Entering information fetching loop");
     loop {
         run().await;
         sleep(Duration::from_secs(10)).await;
