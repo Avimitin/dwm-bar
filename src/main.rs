@@ -39,17 +39,9 @@ async fn run() {
     }
 
     // Clean the bar
-    Command::new("xsetroot")
-        .arg("-name")
-        .arg("''")
-        .output()
-        .expect("Fail to execute xsetroot command");
-
-    if let Ok(mut child) = Command::new("xsetroot").arg("-name").arg(barline).spawn() {
-        child.wait().expect("fail to end the xsetroot command");
-    } else {
-        eprintln!("Fail to execute xsetroot")
-    }
+    let mut cmd = Command::new("xsetroot");
+    let _hold = cmd.arg("-name").arg("''").output().expect("Fail to execute xsetroot");
+    let _hold = cmd.arg("-name").arg(barline).output().expect("Fail to execute xsetroot");
 }
 
 use argh::FromArgs;
