@@ -8,13 +8,11 @@ use tokio::fs;
 /// or no capacity/status file was found.
 pub async fn battery() -> Option<Block> {
     let perc = tokio::spawn(async {
-        Some(
-            fs::read_to_string(format!("/sys/class/power_supply/{}/capacity", "BAT0"))
+        fs::read_to_string(format!("/sys/class/power_supply/{}/capacity", "BAT0"))
                 .await
                 .ok()?
                 .parse::<i32>()
-                .ok()?,
-        )
+                .ok()
     });
 
     let stat = fs::read_to_string(format!("/sys/class/power_supply/{}/status", "BAT0"))

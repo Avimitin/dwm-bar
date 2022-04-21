@@ -140,10 +140,10 @@ impl SinkController {
         });
         self.wait_for_operation(op)?;
         let mut result = server.borrow_mut();
-        Ok(result
+        result
             .take()
             .unwrap()
-            .ok_or_else(|| anyhow!("Error getting information about the server"))?)
+            .ok_or_else(|| anyhow!("Error getting information about the server"))
     }
 
     fn get_default_device(&mut self) -> Result<Device> {
