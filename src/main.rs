@@ -82,6 +82,7 @@ async fn run(app: &App) -> Result<()> {
 async fn main() {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::TRACE)
+        .without_time()
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("Fail to set default logger");
