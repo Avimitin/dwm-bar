@@ -7,80 +7,89 @@ use dbus::nonblock::{stdintf::org_freedesktop_dbus::Properties, Proxy, SyncConne
 use dbus_tokio::connection;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{info, error};
+use tracing::{error, info};
 
-pub async fn song_info() -> Option<Block> {
-    let (resource, conn) = connection::new_session_sync().ok()?;
-
-    // FIXME: Keep connection once is enough
-    let _conn_handle = tokio::spawn(async {
-        info!("Holding connection to D-Bus");
-        let err = resource.await;
-        error!("Lost connection to D-Bus: {}", err);
-    });
-
-    let player_addr = find_active_player_address(conn.clone()).await.ok()?;
-    let metadata = get_metadata(conn.clone(), &player_addr).await.ok()?;
-
-    let artist: Option<&Vec<String>> = arg::prop_cast(&metadata, "xesam:artist");
-    let artist = artist?.join(" ");
-    let song: Option<&String> = arg::prop_cast(&metadata, "xesam:title");
-    let song = song?;
-
-    let output = format!(
-        " {} - {} ",
-        if !artist.is_empty() {
-            artist
-        } else {
-            "Anonymous".to_string()
-        },
-        song,
-    );
-
-    let text_limit = 40;
-    // trim the text
-    let output = if output.len() > text_limit {
-        let split = output.chars().take(text_limit).collect::<String>();
-        format!("{}...", split)
-    } else {
-        output
-    };
-
-    Some(
-        Block::new(" ", output)
-            .icon_color("#EAEAEA", "#0C0C0C")
-            .text_color("#EAEAEA", "#171617"),
-    )
+pub struct SongInfo {
+    conn: Arc<SyncConnection>,
 }
 
-async fn find_active_player_address(conn: Arc<SyncConnection>) -> Result<String> {
-    let proxy = Proxy::new(
-        "org.freedesktop.DBus",
-        "/",
-        Duration::from_millis(2000),
-        conn,
-    );
-    let (services,): (Vec<String>,) = proxy
-        .method_call("org.freedesktop.DBus", "ListNames", ())
-        .await?;
-
-    for service in services {
-        if service.contains("mpris") {
-            return Ok(service);
-        }
+impl SongInfo {
+    pub fn new() -> Result<SongInfo> {
+        let (resource, conn) = connection::new_session_sync()?;
+        let _conn_handle = tokio::spawn(async {
+            info!("Holding connection to D-Bus");
+            let err = resource.await;
+            error!("Lost connection to D-Bus: {}", err);
+        });
+        Ok(SongInfo { conn })
     }
 
-    anyhow::bail!("No active mpris player was found")
-}
+    async fn get_metadata(&self) -> Result<arg::PropMap> {
+        let proxy = Proxy::new(
+            "org.freedesktop.DBus",
+            "/",
+            Duration::from_millis(2000),
+            self.conn.clone(),
+        );
+        let (services,): (Vec<String>,) = proxy
+            .method_call("org.freedesktop.DBus", "ListNames", ())
+            .await?;
 
-async fn get_metadata(conn: Arc<SyncConnection>, addr: &str) -> Result<arg::PropMap> {
-    let proxy = Proxy::new(
-        addr,
-        "/org/mpris/MediaPlayer2",
-        Duration::from_millis(2000),
-        conn,
-    );
-    Ok(proxy
-        .get("org.mpris.MediaPlayer2.Player", "Metadata")
-        .await?)
+        let mut has_mpris_service = None;
+        for service in services {
+            if service.contains("mpris") {
+                has_mpris_service = Some(service);
+            }
+        }
+
+        if has_mpris_service.is_none() {
+            anyhow::bail!("No active mpris player was found")
+        }
+
+        let addr = has_mpris_service.unwrap();
+
+        let proxy = Proxy::new(
+            addr,
+            "/org/mpris/MediaPlayer2",
+            Duration::from_millis(2000),
+            self.conn.clone(),
+        );
+        Ok(proxy
+            .get("org.mpris.MediaPlayer2.Player", "Metadata")
+            .await?)
+    }
+
+    pub async fn song_info(&self) -> Option<Block> {
+        let metadata = self.get_metadata().await.ok()?;
+
+        let artist: Option<&Vec<String>> = arg::prop_cast(&metadata, "xesam:artist");
+        let artist = artist?.join(" ");
+        let song: Option<&String> = arg::prop_cast(&metadata, "xesam:title");
+        let song = song?;
+
+        let output = format!(
+            " {} - {} ",
+            if !artist.is_empty() {
+                artist
+            } else {
+                "Anonymous".to_string()
+            },
+            song,
+        );
+
+        let text_limit = 40;
+        // trim the text
+        let output = if output.len() > text_limit {
+            let split = output.chars().take(text_limit).collect::<String>();
+            format!("{}...", split)
+        } else {
+            output
+        };
+
+        Some(
+            Block::new(" ", output)
+                .icon_color("#EAEAEA", "#0C0C0C")
+                .text_color("#EAEAEA", "#171617"),
+        )
+    }
 }

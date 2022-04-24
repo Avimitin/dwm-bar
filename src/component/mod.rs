@@ -8,7 +8,7 @@ mod battery;
 mod cpu;
 
 // re-export
-pub use song::song_info;
+pub use song::SongInfo;
 pub use datetime::date_and_time;
 pub use volume::sound_volume;
 #[cfg(feature = "bluetooth-battery")]
