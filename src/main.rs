@@ -7,11 +7,14 @@ static DIVIDER: &str = "     |     ";
 use anyhow::Result;
 use argh::FromArgs;
 use std::{process::Command, sync::Arc, time::Duration};
-use tokio::{
-    spawn as t_spawn,
-    sync::mpsc,
-    time::{interval, sleep},
-};
+use tokio::spawn as t_spawn;
+
+#[cfg(feature = "bluetooth-battery")]
+use tokio::time::interval;
+#[cfg(feature = "bluetooth-battery")]
+use tokio::sync::watch;
+
+use tokio::time::sleep;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -31,17 +34,17 @@ struct App {
 use component::Block;
 
 #[cfg(feature = "bluetooth-battery")]
-async fn function(tx: mpsc::Sender<Option<Block>>) -> Result<()> {
+async fn function(tx: watch::Sender<Option<Block>>, secs: u64) -> Result<()> {
     let mut headset_battery = component::HeadsetBattery::new().await?;
 
-    let mut ticker = interval(Duration::from_secs(1));
+    let mut ticker = interval(Duration::from_secs(secs));
     loop {
         if tx.is_closed() {
             break;
         }
 
         let block = headset_battery.update().await;
-        tx.send(block).await?;
+        tx.send(block)?;
 
         ticker.tick().await;
     }
@@ -54,18 +57,27 @@ async fn run(app: &App) -> Result<()> {
 
     let song_info = Arc::new(component::SongInfo::new()?);
 
+    #[cfg(feature = "bluetooth-battery")]
+    let (tx, rx) = watch::channel(None);
+    #[cfg(feature = "bluetooth-battery")]
+    t_spawn(async move {
+        function(tx, 10).await.unwrap();
+    });
+
     loop {
         let song = song_info.clone();
+        #[cfg(feature = "bluetooth-battery")]
+        let mut btbat_rx = rx.clone();
         let bar = vec![
             t_spawn(async move { song.song_info().await }),
             t_spawn(async { component::sound_volume().await }),
             #[cfg(feature = "bluetooth-battery")]
-            t_spawn(async {
-                let (tx, mut rx) = mpsc::channel(1);
-                t_spawn(async move {
-                    function(tx.clone()).await.unwrap();
-                });
-                rx.recv().await.unwrap()
+            t_spawn(async move {
+                if btbat_rx.changed().await.is_ok() {
+                    (*btbat_rx.borrow()).clone()
+                } else {
+                    None
+                }
             }),
             t_spawn(async { component::battery().await }),
             t_spawn(async { component::avg_load().await }),
