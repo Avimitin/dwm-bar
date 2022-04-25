@@ -20,6 +20,10 @@ struct App {
     #[argh(switch)]
     /// run this command only one time for testing
     once: bool,
+
+    #[argh(switch)]
+    /// do not output contents to the bar, print it to stdout instead
+    dry: bool,
 }
 
 async fn run(app: &App) -> Result<()> {
@@ -57,18 +61,22 @@ async fn run(app: &App) -> Result<()> {
             barline.push_str(NORMAL_COLOR);
         }
 
-        // Clean the bar
-        let mut cmd = Command::new("xsetroot");
-        let _hold = cmd
-            .arg("-name")
-            .arg("''")
-            .output()
-            .expect("Fail to execute xsetroot");
-        let _hold = cmd
-            .arg("-name")
-            .arg(barline)
-            .output()
-            .expect("Fail to execute xsetroot");
+        if !app.dry {
+            // Clean the bar
+            let mut cmd = Command::new("xsetroot");
+            let _hold = cmd
+                .arg("-name")
+                .arg("''")
+                .output()
+                .expect("Fail to execute xsetroot");
+            let _hold = cmd
+                .arg("-name")
+                .arg(barline)
+                .output()
+                .expect("Fail to execute xsetroot");
+        } else {
+            info!("New output: {}", barline);
+        }
 
         if app.once {
             return Ok(());
