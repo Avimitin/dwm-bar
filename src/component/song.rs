@@ -38,7 +38,7 @@ impl SongInfo {
         let addr = services
             .iter()
             .find(|serv| serv.contains("mpris"))
-            .ok_or(anyhow::anyhow!("No mpris device found"))?;
+            .ok_or_else(|| anyhow::anyhow!("No mpris device found"))?;
 
         let proxy = Proxy::new(
             addr,
