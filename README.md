@@ -2,6 +2,8 @@
 
 This is a simple program for showing information on the dwm bar.
 
+***ALERT!!!!: This is a WORK IN PROGRESS project, use at your own risk.*** 
+
 ## Features
 
 Currently, it supports:
