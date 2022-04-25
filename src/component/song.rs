@@ -35,18 +35,10 @@ impl SongInfo {
             .method_call("org.freedesktop.DBus", "ListNames", ())
             .await?;
 
-        let mut has_mpris_service = None;
-        for service in services {
-            if service.contains("mpris") {
-                has_mpris_service = Some(service);
-            }
-        }
-
-        if has_mpris_service.is_none() {
-            anyhow::bail!("No active mpris player was found")
-        }
-
-        let addr = has_mpris_service.unwrap();
+        let addr = services
+            .iter()
+            .find(|serv| serv.contains("mpris"))
+            .ok_or(anyhow::anyhow!("No mpris device found"))?;
 
         let proxy = Proxy::new(
             addr,
