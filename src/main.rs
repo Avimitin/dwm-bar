@@ -6,11 +6,12 @@ static DIVIDER: &str = "     |     ";
 
 use anyhow::Result;
 use argh::FromArgs;
-use std::process::Command;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::spawn as t_spawn;
-use tokio::time::sleep;
+use std::{process::Command, sync::Arc, time::Duration};
+use tokio::{
+    spawn as t_spawn,
+    sync::mpsc,
+    time::{interval, sleep},
+};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -26,6 +27,28 @@ struct App {
     dry: bool,
 }
 
+#[cfg(feature = "bluetooth-battery")]
+use component::Block;
+
+#[cfg(feature = "bluetooth-battery")]
+async fn function(tx: mpsc::Sender<Option<Block>>) -> Result<()> {
+    let mut headset_battery = component::HeadsetBattery::new().await?;
+
+    let mut ticker = interval(Duration::from_secs(1));
+    loop {
+        if tx.is_closed() {
+            break;
+        }
+
+        let block = headset_battery.update().await;
+        tx.send(block).await?;
+
+        ticker.tick().await;
+    }
+
+    Ok(())
+}
+
 async fn run(app: &App) -> Result<()> {
     info!("Entering information fetching loop");
 
@@ -37,7 +60,13 @@ async fn run(app: &App) -> Result<()> {
             t_spawn(async move { song.song_info().await }),
             t_spawn(async { component::sound_volume().await }),
             #[cfg(feature = "bluetooth-battery")]
-            t_spawn(async { component::headset_battery().await }),
+            t_spawn(async {
+                let (tx, mut rx) = mpsc::channel(1);
+                t_spawn(async move {
+                    function(tx.clone()).await.unwrap();
+                });
+                rx.recv().await.unwrap()
+            }),
             t_spawn(async { component::battery().await }),
             t_spawn(async { component::avg_load().await }),
             t_spawn(async { component::date_and_time() }),
