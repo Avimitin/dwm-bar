@@ -42,7 +42,7 @@ cargo install --path . --features headset-battery
 - [x] native battery information
 - [ ] easy configuration
 - [ ] API port for new module
-
+- [ ] Flexible code design
 
 ## Gallery
 
