@@ -70,9 +70,9 @@ flowchart
 
   subgraph BarUpdater
     store["store: Vec<String>"]
-    store --> render["render() // draw to the bar"]
+    store --hook--> render["render() // draw to the bar"]
 
-    update["update(ID, content)"] --> store
+    update["update(ID, content)"] --write to--> store
 
     register["register(trait{ async fn update() }) -> TASKn"]
     register --> TASK1
