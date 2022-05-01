@@ -18,3 +18,8 @@ pub use headset_battery::HeadsetBattery;
 pub use battery::battery;
 pub use cpu::avg_load;
 pub use widget::Block;
+
+#[async_trait::async_trait]
+pub trait Updater {
+    async fn update(&mut self) -> Option<Block>;
+}
