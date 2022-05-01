@@ -1,7 +1,6 @@
-// FIXME: We should keep the connection
-
 use super::widget::Block;
 use anyhow::Result;
+use async_trait::async_trait;
 use dbus::arg;
 use dbus::nonblock::{stdintf::org_freedesktop_dbus::Properties, Proxy, SyncConnection};
 use dbus_tokio::connection;
@@ -50,8 +49,11 @@ impl SongInfo {
             .get("org.mpris.MediaPlayer2.Player", "Metadata")
             .await?)
     }
+}
 
-    pub async fn song_info(&self) -> Option<Block> {
+#[async_trait]
+impl super::Updater for SongInfo {
+    async fn update(&mut self) -> Option<Block> {
         let metadata = self.get_metadata().await.ok()?;
 
         let artist: Option<&Vec<String>> = arg::prop_cast(&metadata, "xesam:artist");
