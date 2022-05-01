@@ -1,5 +1,7 @@
 # Design
 
+New design progress: https://github.com/Avimitin/dwm-bar/tree/modulable
+
 - Diagram
 
 ```mermaid

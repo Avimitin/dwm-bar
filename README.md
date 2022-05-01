@@ -42,7 +42,7 @@ cargo install --path . --features headset-battery
 - [x] native battery information
 - [ ] easy configuration
 - [ ] API port for new module
-- [ ] Flexible code design
+- [ ] Flexible code design. Current [progress](https://github.com/Avimitin/dwm-bar/commits/modulable), Since May 1, 2022
 
 ## Gallery
 
