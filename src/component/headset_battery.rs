@@ -6,6 +6,7 @@ use dbus::Path;
 use dbus_tokio::connection;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::oneshot;
 
 /// Build a headset battery component.
 /// This functionality depends on UPower DBus daemon
@@ -15,6 +16,7 @@ use std::time::Duration;
 pub struct HeadsetBattery<'a> {
     proxy: Option<Proxy<'a, Arc<SyncConnection>>>,
     conn: Arc<SyncConnection>,
+    close_notifier: tokio::sync::oneshot::Sender<u8>,
 }
 
 #[async_trait]
@@ -43,19 +45,39 @@ impl<'a> super::Updater for HeadsetBattery<'a> {
                 .icon_fg("#EAEAEA"),
         )
     }
+}
 
+impl<'a> Drop for HeadsetBattery<'_> {
+    fn drop(&mut self) {
+        self.close_notifier.send(0);
+    }
 }
 
 impl<'a> HeadsetBattery<'a> {
     pub async fn new() -> Result<HeadsetBattery<'a>> {
         let (resource, conn) = connection::new_system_sync()?;
+
+        // notify the resource holder to close the connection
+        let (tx, rx) = oneshot::channel::<u8>();
+
         // hold the connection in other thread
-        tokio::spawn(async {
-            // FIXME: use a channel to gracefully shutdown the connection
-            resource.await;
+        tokio::spawn(async move {
+            tracing::trace!("Holding DBus connectoin to headset battery");
+            tokio::select!{
+                // close connection when headset battery instant is dropped
+                _ = rx => {
+                    tracing::trace!("Headset Battery: UPower DBus Connection closed by signal");
+                    return;
+                }
+                // if the resources can't be await, it means something unexpected happened
+                err = resource => {
+                    tracing::trace!("Headset Battery: UPower DBus Connection closed unexpectedly: {}", err);
+                    return;
+                }
+            }
         });
 
-        let mut bat = Self { proxy: None, conn };
+        let mut bat = Self { proxy: None, close_notifier: tx , conn };
 
         // try get device at initialize
         bat.enum_devices().await?;
