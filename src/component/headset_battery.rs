@@ -1,5 +1,6 @@
 use super::widget::Block;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use dbus::nonblock::{stdintf::org_freedesktop_dbus::Properties, Proxy, SyncConnection};
 use dbus::Path;
 use dbus_tokio::connection;
@@ -16,23 +17,11 @@ pub struct HeadsetBattery<'a> {
     conn: Arc<SyncConnection>,
 }
 
-impl<'a> HeadsetBattery<'a> {
-    pub async fn new() -> Result<HeadsetBattery<'a>> {
-        let (resource, conn) = connection::new_system_sync()?;
-        // hold the connection in other thread
-        tokio::spawn(async {
-            resource.await;
-        });
-
-        let mut bat = Self { proxy: None, conn };
-
-        // try get device at initialize
-        bat.enum_devices().await?;
-
-        Ok(bat)
-    }
-
-    pub async fn update(&mut self) -> Option<Block> {
+#[async_trait]
+impl<'a> super::Updater for HeadsetBattery<'a> {
+    /// Update headset battery information. It will automatically update devices when dbus
+    /// connection is failed.
+    async fn update(&mut self) -> Option<Block> {
         // check and update headset device
         self.enum_devices().await.ok()?;
 
@@ -53,6 +42,25 @@ impl<'a> HeadsetBattery<'a> {
                 .text_fg("#EAEAEA")
                 .icon_fg("#EAEAEA"),
         )
+    }
+
+}
+
+impl<'a> HeadsetBattery<'a> {
+    pub async fn new() -> Result<HeadsetBattery<'a>> {
+        let (resource, conn) = connection::new_system_sync()?;
+        // hold the connection in other thread
+        tokio::spawn(async {
+            // FIXME: use a channel to gracefully shutdown the connection
+            resource.await;
+        });
+
+        let mut bat = Self { proxy: None, conn };
+
+        // try get device at initialize
+        bat.enum_devices().await?;
+
+        Ok(bat)
     }
 
     async fn enum_devices(&mut self) -> Result<()> {
